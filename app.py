@@ -1,16 +1,24 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import sqlite3
 import uuid
-import os
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key'
 
-# Secure absolute path to a folder Render permits writing to
-DB_PATH = '/tmp/polling.db'
+# Tells SQLite to run entirely in the server RAM to bypass all disk restrictions
+DB_PATH = ':memory:'
+
+# Global connection placeholder for memory persistence
+_db_conn = None
+
+def get_db():
+    global _db_conn
+    if _db_conn is None:
+        _db_conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    return _db_conn
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS polls (
@@ -38,7 +46,6 @@ def init_db():
         )
     ''')
     conn.commit()
-    conn.close()
 
 @app.route('/')
 def index():
@@ -56,20 +63,19 @@ def create_poll():
     poll_id = str(uuid.uuid4())[:8]
     host_secret = str(uuid.uuid4())[:12]
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute("INSERT INTO polls (poll_id, question, feedback_question, host_secret) VALUES (?, ?, ?, ?)", 
                    (poll_id, question, feedback_question, host_secret))
     for option in options:
         cursor.execute("INSERT INTO options (poll_id, option_text) VALUES (?, ?)", (poll_id, option))
     conn.commit()
-    conn.close()
 
     return render_template('poll_created.html', poll_id=poll_id, host_secret=host_secret, base_url=request.host_url)
 
 @app.route('/poll/<poll_id>')
 def view_poll(poll_id):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT question, feedback_question FROM polls WHERE poll_id = ?", (poll_id,))
     poll = cursor.fetchone()
@@ -78,7 +84,6 @@ def view_poll(poll_id):
     
     cursor.execute("SELECT option_text FROM options WHERE poll_id = ?", (poll_id,))
     options = [row[0] for row in cursor.fetchall()]
-    conn.close()
     
     return render_template('vote.html', poll_id=poll_id, question=poll[0], feedback_question=poll[1], options=options)
 
@@ -89,19 +94,18 @@ def submit_vote(poll_id):
     feedback_answer = request.form.get('feedback_answer', '').strip()
     
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_db()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO votes (poll_id, student_name, candidate_chosen, feedback_answer) VALUES (?, ?, ?, ?)", 
                        (poll_id, name, choice, feedback_answer))
         conn.commit()
-        conn.close()
         return "<h3>Vote and feedback submitted successfully!</h3>"
     except sqlite3.IntegrityError:
         return "<h3>Error: You have already voted in this poll!</h3>", 400
 
 @app.route('/dashboard/<host_secret>')
 def view_dashboard(host_secret):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT poll_id, question, feedback_question FROM polls WHERE host_secret = ?", (host_secret,))
     poll = cursor.fetchone()
@@ -116,9 +120,10 @@ def view_dashboard(host_secret):
     cursor.execute("SELECT student_name, candidate_chosen, feedback_answer FROM votes WHERE poll_id = ?", (poll_id,))
     detailed_votes = cursor.fetchall()
     
-    conn.close()
     return render_template('dashboard.html', question=question, feedback_question=feedback_question, summary=summary, detailed_votes=detailed_votes)
 
+# Initialize database tables inside the memory instance immediately upon loading
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True)
