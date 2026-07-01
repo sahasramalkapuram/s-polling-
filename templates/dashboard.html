@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - QuickPoll</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans flex flex-col justify-between">
+
+    <header class="bg-white border-b border-slate-100 px-6 py-4 shadow-xs">
+        <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <h1 class="text-xl font-black text-indigo-600 tracking-tight">📊 QuickPoll <span class="text-slate-300 font-normal mx-2">|</span> <span class="text-slate-600 text-sm font-medium font-sans">Host Control Hub</span></h1>
+            <a href="/" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl transition-all">Create New Poll</a>
+        </div>
+    </header>
+
+    <main class="max-w-5xl w-full mx-auto p-4 my-8 space-y-6">
+        
+        <!-- Poll Title / Header Card -->
+        <div class="bg-white rounded-2xl shadow-xl shadow-slate-100 border border-slate-100 p-6">
+            <span class="text-xs bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1 rounded-full border border-indigo-100">Live Active Statistics</span>
+            <h2 class="text-2xl font-bold text-slate-800 mt-3 leading-tight">
+                Question: {{ question }}
+            </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Left Side: Public Distribution Analytics Summary -->
+            <div class="bg-white rounded-2xl shadow-xl shadow-slate-100 border border-slate-100 p-6 md:col-span-1 h-fit">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">📊 Vote Aggregates</h3>
+                <div class="space-y-3">
+                    {% if summary %}
+                        {% for row in summary %}
+                        <div class="p-3.5 bg-slate-50 border border-slate-200/60 rounded-xl">
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold text-slate-700">{{ row[0] }}</span>
+                                <span class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm">{{ row[1] }} votes</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-sm text-slate-400 italic py-2">No votes recorded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right Side: The Private Host Ledger Database Table -->
+            <div class="bg-white rounded-2xl shadow-xl shadow-slate-100 border border-slate-100 p-6 md:col-span-2 overflow-hidden">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">🕵️‍♂️ Host Audit Log (Hidden From Public)</h3>
+                
+                <div class="overflow-x-auto border border-slate-100 rounded-xl">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100">
+                                <th class="p-4 text-xs font-bold uppercase tracking-wider text-slate-600">Voter / Identifier</th>
+                                <th class="p-4 text-xs font-bold uppercase tracking-wider text-slate-600">Selection Choice</th>
+                                <th class="p-4 text-xs font-bold uppercase tracking-wider text-slate-600">Feedback Answer ({{ feedback_question if feedback_question else 'None' }})</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+                            {% if detailed_votes %}
+                                {% for row in detailed_votes %}
+                                <tr class="hover:bg-slate-50/50 transition-all">
+                                    <td class="p-4 font-mono font-bold text-slate-900 capitalize">{{ row[0] }}</td>
+                                    <td class="p-4">
+                                        <span class="inline-block bg-slate-100 text-slate-800 font-medium px-2 py-1 rounded-md text-xs border border-slate-200">
+                                            {{ row[1] }}
+                                        </span>
+                                    </td>
+                                    <td class="p-4 text-slate-500 max-w-xs break-words">
+                                        {% if row[2] %}
+                                            {{ row[2] }}
+                                        {% else %}
+                                            <span class="text-slate-300 italic text-xs">No feedback provided</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="p-8 text-center text-slate-400 italic">
+                                    Waiting for your classmates to cast their votes...
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="text-center py-6 border-t border-slate-100 bg-white">
+        <p class="text-xs text-slate-400">Secure Admin Instance Dashboard Hub</p>
+    </footer>
+
+</body>
+</html>
