@@ -1,14 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import sqlite3
 import uuid
+import os
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key'
 
+# Secure absolute path to a folder Render permits writing to
+DB_PATH = '/tmp/polling.db'
+
 def init_db():
-    conn = sqlite3.connect('polling.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    # 1. Stores the main poll info and the optional feedback question text
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS polls (
             poll_id TEXT PRIMARY KEY,
@@ -17,7 +20,6 @@ def init_db():
             host_secret TEXT
         )
     ''')
-    # 2. Stores voting options
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS options (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,7 +27,6 @@ def init_db():
             option_text TEXT
         )
     ''')
-    # 3. Stores votes and the feedback answer tied together
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS votes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,7 +56,7 @@ def create_poll():
     poll_id = str(uuid.uuid4())[:8]
     host_secret = str(uuid.uuid4())[:12]
 
-    conn = sqlite3.connect('polling.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("INSERT INTO polls (poll_id, question, feedback_question, host_secret) VALUES (?, ?, ?, ?)", 
                    (poll_id, question, feedback_question, host_secret))
@@ -68,7 +69,7 @@ def create_poll():
 
 @app.route('/poll/<poll_id>')
 def view_poll(poll_id):
-    conn = sqlite3.connect('polling.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT question, feedback_question FROM polls WHERE poll_id = ?", (poll_id,))
     poll = cursor.fetchone()
@@ -85,10 +86,10 @@ def view_poll(poll_id):
 def submit_vote(poll_id):
     name = request.form.get('student_name').strip().lower()
     choice = request.form.get('choice')
-    feedback_answer = request.form.get('feedback_answer', '').strip() # Capture voter's feedback response
+    feedback_answer = request.form.get('feedback_answer', '').strip()
     
     try:
-        conn = sqlite3.connect('polling.db')
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("INSERT INTO votes (poll_id, student_name, candidate_chosen, feedback_answer) VALUES (?, ?, ?, ?)", 
                        (poll_id, name, choice, feedback_answer))
@@ -100,7 +101,7 @@ def submit_vote(poll_id):
 
 @app.route('/dashboard/<host_secret>')
 def view_dashboard(host_secret):
-    conn = sqlite3.connect('polling.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT poll_id, question, feedback_question FROM polls WHERE host_secret = ?", (host_secret,))
     poll = cursor.fetchone()
@@ -112,7 +113,6 @@ def view_dashboard(host_secret):
     cursor.execute("SELECT candidate_chosen, COUNT(*) FROM votes WHERE poll_id = ? GROUP BY candidate_chosen", (poll_id,))
     summary = cursor.fetchall()
     
-    # Fetch student name, their vote choice, and their typed feedback response
     cursor.execute("SELECT student_name, candidate_chosen, feedback_answer FROM votes WHERE poll_id = ?", (poll_id,))
     detailed_votes = cursor.fetchall()
     
