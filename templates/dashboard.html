@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Polls Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+    <aside class="w-64 bg-slate-900 text-white flex flex-col justify-between p-6 hidden md:flex">
+        <div class="space-y-8">
+            <h1 class="text-xl font-black tracking-tight text-indigo-400">📊 PollEngine Pro</h1>
+            <nav class="space-y-1">
+                <a href="/dashboard" class="flex items-center space-x-3 bg-slate-800 px-4 py-3 rounded-xl text-white font-medium">
+                    <span>Workspace Dashboard</span>
+                </a>
+                <a href="/poll/new" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white transition">
+                    <span>Create New Poll</span>
+                </a>
+            </nav>
+        </div>
+        <div class="border-t border-slate-800 pt-4 flex items-center justify-between">
+            <div class="truncate pr-2">
+                <p class="text-sm font-bold truncate">{{ current_user.name }}</p>
+            </div>
+            <a href="/logout" class="text-xs font-bold text-red-400 hover:text-red-300">Sign Out</a>
+        </div>
+    </aside>
+
+    <main class="flex-grow p-6 md:p-10 overflow-y-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-3xl font-black text-slate-900 tracking-tight">Your Dashboard</h2>
+                <p class="text-slate-500 text-sm">Monitor system analytics and manage active elections.</p>
+            </div>
+            <a href="/poll/new" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition cursor-pointer">+ New Poll</a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-100">
+                <h3 class="text-md font-bold text-slate-800 mb-4 flex items-center space-x-2">
+                    <span class="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span>Active Campus Polls</span>
+                </h3>
+                <div class="space-y-3">
+                    {% for p in polls if p.is_active %}
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between hover:border-indigo-200 transition">
+                        <div class="truncate pr-3">
+                            <h4 class="font-bold text-slate-900 truncate">{{ p.question }}</h4>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">{{ p.vote_count }} total responses collected</p>
+                        </div>
+                        <a href="/analytics/{{ p.host_secret }}" class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold text-xs px-3 py-2 rounded-lg transition shrink-0">View Live Results</a>
+                    </div>
+                    {% else %}
+                    <p class="text-slate-400 text-xs py-4 italic">No running polls currently available.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-100">
+                <h3 class="text-md font-bold text-slate-800 mb-4 flex items-center space-x-2">
+                    <span class="h-2 w-2 bg-slate-400 rounded-full"></span>
+                    <span>Archived Poll History</span>
+                </h3>
+                <div class="space-y-3">
+                    {% for p in polls if not p.is_active %}
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between opacity-80">
+                        <div class="truncate pr-3">
+                            <h4 class="font-bold text-slate-800 truncate">{{ p.question }}</h4>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">{{ p.vote_count }} responses recorded</p>
+                        </div>
+                        <a href="/analytics/{{ p.host_secret }}" class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold text-xs px-3 py-2 rounded-lg transition shrink-0">View Report</a>
+                    </div>
+                    {% else %}
+                    <p class="text-slate-400 text-xs py-4 italic">No archived historical records available.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
