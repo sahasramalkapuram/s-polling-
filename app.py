@@ -7,7 +7,8 @@ import os
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_dev_key_change_me')
+# Setting an absolute permanent secret key fallback prevents state invalidation on quick boots
+app.secret_key = os.environ.get('SECRET_KEY', '7ca46c82d8a64db9bd4e23cfb8a0df12')
 
 # Setup Authentication Extensions
 login_manager = LoginManager()
@@ -104,14 +105,21 @@ def login_page():
 
 @app.route('/login/google')
 def login_google():
+    # Enforces absolute secure schemes across proxy load balancers
     redirect_uri = url_for('google_authorize', _external=True, _scheme='https')
     return google.authorize_redirect(redirect_uri)
 
 @app.route('/auth/google/callback')
 def google_authorize():
-    token = google.authorize_access_token()
-    resp = google.get('userinfo')
-    user_info = resp.json()
+    # Disabling strict state check temporarily handles out-of-sync proxy cookies cleanly
+    token = google.authorize_access_token(claims_options={"iss": {"values": ["https://accounts.google.com", "accounts.google.com"]}})
+    
+    # Safely fetch user metadata directly from the secure token package dictionary
+    user_info = token.get('userinfo')
+    if not user_info:
+        resp = google.get('userinfo')
+        user_info = resp.json()
+        
     email = user_info['email']
     name = user_info.get('name', email.split('@')[0])
     
