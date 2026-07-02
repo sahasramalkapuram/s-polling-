@@ -1,14 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify
 import sqlite3
 import uuid
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key'
 
-# Tells SQLite to run entirely in the server RAM to bypass all disk restrictions
 DB_PATH = ':memory:'
-
-# Global connection placeholder for memory persistence
 _db_conn = None
 
 def get_db():
@@ -25,7 +23,8 @@ def init_db():
             poll_id TEXT PRIMARY KEY,
             question TEXT,
             feedback_question TEXT,
-            host_secret TEXT
+            host_secret TEXT,
+            expires_at TEXT
         )
     ''')
     cursor.execute('''
@@ -40,9 +39,10 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             poll_id TEXT,
             student_name TEXT,
+            roll_number TEXT,
             candidate_chosen TEXT,
             feedback_answer TEXT,
-            UNIQUE(poll_id, student_name)
+            UNIQUE(poll_id, roll_number)
         )
     ''')
     conn.commit()
@@ -56,17 +56,21 @@ def create_poll():
     question = request.form.get('question')
     feedback_question = request.form.get('feedback_question', '').strip()
     options = [opt.strip() for opt in request.form.getlist('options') if opt.strip()]
+    duration_hours = request.form.get('duration', type=float, default=24.0)
     
     if not question or len(options) < 2:
         return "Please provide a question and at least 2 choices!", 400
 
     poll_id = str(uuid.uuid4())[:8]
     host_secret = str(uuid.uuid4())[:12]
+    
+    # Calculate expiry timestamp
+    expires_at = (datetime.utcnow() + timedelta(hours=duration_hours)).isoformat()
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO polls (poll_id, question, feedback_question, host_secret) VALUES (?, ?, ?, ?)", 
-                   (poll_id, question, feedback_question, host_secret))
+    cursor.execute("INSERT INTO polls (poll_id, question, feedback_question, host_secret, expires_at) VALUES (?, ?, ?, ?, ?)", 
+                   (poll_id, question, feedback_question, host_secret, expires_at))
     for option in options:
         cursor.execute("INSERT INTO options (poll_id, option_text) VALUES (?, ?)", (poll_id, option))
     conn.commit()
@@ -77,31 +81,43 @@ def create_poll():
 def view_poll(poll_id):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT question, feedback_question FROM polls WHERE poll_id = ?", (poll_id,))
+    cursor.execute("SELECT question, feedback_question, expires_at FROM polls WHERE poll_id = ?", (poll_id,))
     poll = cursor.fetchone()
     if not poll:
         return "Poll not found!", 404
     
+    # Check if expired
+    expiry_time = datetime.fromisoformat(poll[2])
+    is_expired = datetime.utcnow() > expiry_time
+
     cursor.execute("SELECT option_text FROM options WHERE poll_id = ?", (poll_id,))
     options = [row[0] for row in cursor.fetchall()]
     
-    return render_template('vote.html', poll_id=poll_id, question=poll[0], feedback_question=poll[1], options=options)
+    return render_template('vote.html', poll_id=poll_id, question=poll[0], feedback_question=poll[1], expires_at=poll[2], is_expired=is_expired, options=options)
 
 @app.route('/poll/<poll_id>/vote', methods=['POST'])
 def submit_vote(poll_id):
-    name = request.form.get('student_name').strip().lower()
+    name = request.form.get('student_name').strip()
+    roll_number = request.form.get('roll_number').strip().upper()
     choice = request.form.get('choice')
     feedback_answer = request.form.get('feedback_answer', '').strip()
     
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Verify expiration first
+    cursor.execute("SELECT expires_at FROM polls WHERE poll_id = ?", (poll_id,))
+    poll = cursor.fetchone()
+    if poll and datetime.utcnow() > datetime.fromisoformat(poll[0]):
+        return "<h3>Error: This poll has already closed!</h3>", 400
+    
     try:
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO votes (poll_id, student_name, candidate_chosen, feedback_answer) VALUES (?, ?, ?, ?)", 
-                       (poll_id, name, choice, feedback_answer))
+        cursor.execute("INSERT INTO votes (poll_id, student_name, roll_number, candidate_chosen, feedback_answer) VALUES (?, ?, ?, ?, ?)", 
+                       (poll_id, name, roll_number, choice, feedback_answer))
         conn.commit()
         return "<h3>Vote and feedback submitted successfully!</h3>"
     except sqlite3.IntegrityError:
-        return "<h3>Error: You have already voted in this poll!</h3>", 400
+        return "<h3>Error: A vote has already been submitted with this Roll Number!</h3>", 400
 
 @app.route('/dashboard/<host_secret>')
 def view_dashboard(host_secret):
@@ -117,12 +133,11 @@ def view_dashboard(host_secret):
     cursor.execute("SELECT candidate_chosen, COUNT(*) FROM votes WHERE poll_id = ? GROUP BY candidate_chosen", (poll_id,))
     summary = cursor.fetchall()
     
-    cursor.execute("SELECT student_name, candidate_chosen, feedback_answer FROM votes WHERE poll_id = ?", (poll_id,))
+    cursor.execute("SELECT student_name, roll_number, candidate_chosen, feedback_answer FROM votes WHERE poll_id = ?", (poll_id,))
     detailed_votes = cursor.fetchall()
     
     return render_template('dashboard.html', question=question, feedback_question=feedback_question, summary=summary, detailed_votes=detailed_votes)
 
-# Initialize database tables inside the memory instance immediately upon loading
 init_db()
 
 if __name__ == '__main__':
