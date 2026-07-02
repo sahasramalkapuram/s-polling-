@@ -104,7 +104,7 @@ def login_page():
 
 @app.route('/login/google')
 def login_google():
-    redirect_uri = url_for('google_authorize', _external=True)
+    redirect_uri = url_for('google_authorize', _external=True, _scheme='https')
     return google.authorize_redirect(redirect_uri)
 
 @app.route('/auth/google/callback')
