@@ -3,6 +3,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from authlib.integrations.flask_client import OAuth
 import sqlite3
 import uuid
+import os
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
