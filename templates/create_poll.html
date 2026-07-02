@@ -1,28 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create a Custom Poll</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f0f2f5; text-align: center; }
-        .box { background: white; max-width: 500px; margin: auto; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-        .btn { background: #28a745; color: white; border: none; padding: 12px; cursor: pointer; font-size: 16px; border-radius: 5px; width: 95%; }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body>
-    <div class="box">
-        <h2>📊 QuickPoll Generator</h2>
-        <form action="/create" method="POST">
-            <input type="text" name="question" placeholder="Enter your poll question here..." required>
-            <hr>
-            <input type="text" name="options" placeholder="Choice 1" required>
-            <input type="text" name="options" placeholder="Choice 2" required>
-            <input type="text" name="options" placeholder="Choice 3 (Optional)">
-            <input type="text" name="options" placeholder="Choice 4 (Optional)">
-            <br><br>
-            <button type="submit" class="btn">Generate My Poll Links</button>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-xl shadow-md max-w-md w-full">
+        <h1 class="text-2xl font-bold text-gray-800 text-center mb-6">📊 QuickPoll Generator</h1>
+        <form action="/create" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Poll Question</label>
+                <input type="text" name="question" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="e.g., Who should be the next Class Representative?">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Time Limit (Hours)</label>
+                <input type="number" name="duration" step="0.5" value="24" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Choices</label>
+                <input type="text" name="options" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Choice 1">
+                <input type="text" name="options" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Choice 2">
+                <input type="text" name="options" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Choice 3 (Optional)">
+                <input type="text" name="options" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Choice 4 (Optional)">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Optional Feedback Question</label>
+                <input type="text" name="feedback_question" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="e.g., Why did you choose this candidate?">
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 text-white font-medium py-2.5 rounded-md hover:bg-emerald-700 transition cursor-pointer">Generate My Poll Links</button>
         </form>
     </div>
 </body>
 </html>
-<input type="text" name="feedback_question" placeholder="Add a feedback question...">
