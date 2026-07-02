@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Analytics Poll Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-radial from-slate-900 via-indigo-950 to-slate-950 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
+        <h1 class="text-3xl font-black text-white tracking-tight mb-2">📊 PollEngine Pro</h1>
+        <p class="text-indigo-200 text-sm mb-8">Create, validate, and chart campus elections in real-time.</p>
+        
+        <form action="/login/email" method="POST" class="space-y-4 text-left">
+            <div>
+                <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1">Campus Email Address</label>
+                <input type="email" name="email" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" placeholder="you@university.com">
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 transition cursor-pointer">Continue with Email</button>
+        </form>
+
+        <div class="relative flex py-5 items-center">
+            <div class="flex-grow border-t border-white/10"></div>
+            <span class="flex-shrink mx-4 text-xs font-bold text-indigo-300 uppercase">Or Continue With</span>
+            <div class="flex-grow border-t border-white/10"></div>
+        </div>
+
+        <a href="/login/google" class="w-full flex items-center justify-center space-x-3 bg-white hover:bg-slate-100 text-slate-900 font-semibold py-3 rounded-xl shadow-md transition cursor-pointer">
+            <svg class="h-5 w-5" viewBox="0 0 24 24">
+                <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.859-3.579-7.859-8s3.529-8 7.859-8c2.46 0 4.105 1.025 5.047 1.926l3.227-3.123C18.28 1.844 15.55 1 12.24 1c-6.076 0-11 4.924-11 11s4.924 11 11 11c6.34 0 10.556-4.434 10.556-10.74 0-.72-.078-1.27-.172-1.685H12.24z"/>
+            </svg>
+            <span>Google Account</span>
+        </a>
+    </div>
+</body>
+</html>
